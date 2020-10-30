@@ -49,16 +49,24 @@ def receive_data(conn, stdscr) -> None:
     while True:
         data = conn.recv(1024).decode("utf-8")
 
-        messages.insert(0, data)
+        # messages.insert(0, data)
+        insert_into_messages(data)
 
         print_messages(stdscr)
 
+
+def insert_into_messages(element):
+    global messages
+    messages.insert(0, element)
+
+    if len(messages) >= curses.LINES:
+        messages = messages[:curses.LINES-1]
 
 def c_main(stdscr) -> None:
     # host = input(stdscr, "Input Address: ")
     # port = input(stdscr, "Input Port: ")
 
-    host = "127.0.0.1"
+    host = "192.168.1.6"
     port = 65432
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -71,7 +79,8 @@ def c_main(stdscr) -> None:
             _thread.start_new_thread(receive_data, (s, stdscr))
             message = input(stdscr, ">> ", curses.LINES-1)
 
-            messages.insert(0, (name + ": " + message))
+            # messages.insert(0, (name + ": " + message))
+            insert_into_messages(name + ": " + message)
 
             print_messages(stdscr)
 
