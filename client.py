@@ -60,7 +60,7 @@ def receive_data(conn, stdscr) -> None:
         print_messages(stdscr)
 
 
-def command_dc(s,*args):
+def command_dc(s, *args):
     s.close()
     sys.exit()
 
@@ -78,7 +78,7 @@ def c_main(stdscr) -> None:
     # host = input(stdscr, "Input Address: ")
     # port = input(stdscr, "Input Port: ")
 
-    host = "192.168.1.6"
+    host = "34.72.70.116"
     port = 65432
 
     name = ""
