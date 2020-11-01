@@ -222,8 +222,9 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         if addr[0] in ban_list:
             conn.close()
 
-        nick = conn.recv(1024).decode("utf-8")
-        conns[conn] = addr
-        nicks[conn] = nick
+        else:
+            nick = conn.recv(1024).decode("utf-8")
+            conns[conn] = addr
+            nicks[conn] = nick
 
-        _thread.start_new_thread(new_client, (conn, addr))
+            _thread.start_new_thread(new_client, (conn, addr))
