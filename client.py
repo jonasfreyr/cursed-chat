@@ -51,8 +51,7 @@ def receive_data(conn, stdscr) -> None:
         data = conn.recv(1024).decode("utf-8")
 
         if data == "dc":
-            # raise AssertionError("lel")
-            command_dc()
+            raise AssertionError("lel")
 
         # messages.insert(0, data)
         insert_into_messages(data)

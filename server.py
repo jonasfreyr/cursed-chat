@@ -12,10 +12,18 @@ nicks = {}
 start = datetime.datetime.now()
 
 def command_log(*args):
+    '''
+        Reads out the log file
+        Takes in nothing
+    '''
     with open("log.txt", "r") as r:
         print(r.read())
 
 def command_conns(*args):
+    '''
+    Prints out active connections
+    Takes in nothing
+    '''
     for connection in conns:
         if args:
             if str(connection) in args:
@@ -27,6 +35,10 @@ def command_conns(*args):
               conns[connection])
 
 def command_disconnect(*args):
+    '''
+    Disconnects the provided players
+    Takes in players ids
+    '''
     for name in args:
         for nick in nicks:
             if nicks[nick] == name:
@@ -41,13 +53,25 @@ def command_disconnect(*args):
             print("Invalid name")
 
 def command_ban(*args):
+    '''
+    Bans provided address
+    Takes in ip address
+    '''
     for ban in args:
         ban_list.append(ban)
 
 def command_print_ban_list(*args):
+    '''
+    Prints out ban list
+    Takes in nothing
+    '''
     print(ban_list)
 
 def command_unban(*args):
+    '''
+    Un-bans provided address
+    Takes in ip address
+    '''
     for address in args:
         if address in ban_list:
             ban_list.remove(address)
@@ -55,37 +79,57 @@ def command_unban(*args):
             print(address + ":", "Invalid address")
 
 def command_shutdown(*args):
+    '''
+    Shutdowns the server
+    Takes in nothing
+    '''
     for id in conns:
         conns[id].sendall(b"dc")
 
     quit()
 
 def command_list_commands(*args):
+    '''
+    Lists all commands
+    Takes in nothing
+    '''
     for command in commands:
         print(command)
 
 
 def command_man(*args):
+    '''
+    Shows what a command does
+    Takes in commands
+    '''
     for command in args:
-        if command in man_commands:
-            print(command + ":", man_commands[command])
-        elif command in commands:
-            print(command + ":", "Has no man page")
+        if command in commands:
+            print(command + ":", commands[command].__doc__)
         else:
             print(command + ":", "Invalid command")
 
-        print("\n")
-
 def command_uptime(*args):
+    '''
+    Show how long the server has been on
+    Takes in nothing
+    '''
     date = datetime.datetime.now()
 
     print(date - start)
 
 def command_address(*args):
+    '''
+    Show the address and the port of the server
+    Takes in nothing
+    '''
     print("IP: ", HOST)
     print("PORT: ", PORT)
 
 def command_restart(*args):
+    '''
+    Restarts the server
+    Takes in nothing
+    '''
     command_disconnect(*conns)
     print("Not yet implemented")
 
