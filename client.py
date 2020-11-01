@@ -1,4 +1,4 @@
-import curses, socket, _thread
+import curses, socket, sys, threading
 
 messages = []
 STRING = ''
@@ -38,7 +38,8 @@ def refresh_input(stdscr):
 def print_messages(stdscr) -> None:
     stdscr.clear()
     for index, message in enumerate(messages):
-        stdscr.insstr(curses.LINES - 2 - index, 0, str(message))
+        if curses.LINES - 2 - index > 0:
+            stdscr.insstr(curses.LINES - 2 - index, 0, str(message))
 
     refresh_input(stdscr)
 
@@ -49,18 +50,29 @@ def receive_data(conn, stdscr) -> None:
     while True:
         data = conn.recv(1024).decode("utf-8")
 
+        if data == "dc":
+            # raise AssertionError("lel")
+            command_dc()
+
         # messages.insert(0, data)
         insert_into_messages(data)
 
         print_messages(stdscr)
 
 
+def command_dc(s,*args):
+    s.close()
+    sys.exit()
+
+
 def insert_into_messages(element):
     global messages
     messages.insert(0, element)
 
-    if len(messages) >= curses.LINES:
-        messages = messages[:curses.LINES-1]
+
+commands_dict = {
+    ":dc:": command_dc
+}
 
 def c_main(stdscr) -> None:
     # host = input(stdscr, "Input Address: ")
@@ -69,27 +81,52 @@ def c_main(stdscr) -> None:
     host = "192.168.1.6"
     port = 65432
 
+    name = ""
+    while len(name) <= 0:
+        name = input(stdscr, "Input Name: ", curses.LINES - 1)
+
+        if len(name) <= 0:
+            stdscr.clear()
+            stdscr.insstr(curses.LINES - 2, 0, "Name not long enough")
+
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect((host, port))
-        name = input(stdscr, "Input Name: ", curses.LINES-1)
 
         nameE = name.encode()
         s.sendall(nameE)
+
+        # _thread.start_new_thread(receive_data, (s, stdscr))
+
+
+        receive_data_thread = threading.Thread(target=receive_data, args=(s, stdscr))
+        receive_data_thread.daemon = True
+        receive_data_thread.start()
+
+
+        # process = multiprocessing.Process(target=receive_data, args=(s, stdscr))
+        # process.start()
+
         while True:
-            _thread.start_new_thread(receive_data, (s, stdscr))
             message = input(stdscr, ">> ", curses.LINES-1)
 
-            # messages.insert(0, (name + ": " + message))
-            insert_into_messages(name + ": " + message)
+            if len(message) > 0:
+                msg = message.split()
 
-            print_messages(stdscr)
+                if msg[0] in commands_dict:
+                    commands_dict[msg[0]](s,*msg[1:])
 
-            message = message.encode()
-            s.sendall(message)
+                # messages.insert(0, (name + ": " + message))
+                insert_into_messages(name + ": " + message)
+
+                print_messages(stdscr)
+
+                message = message.encode()
+                s.sendall(message)
+
 
 def main() -> None:
     return curses.wrapper(c_main)
 
 
 if __name__ == '__main__':
-    exit(main())
+    main()
