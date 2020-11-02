@@ -77,7 +77,7 @@ def c_main(stdscr) -> None:
     # host = input(stdscr, "Input Address: ")
     # port = input(stdscr, "Input Port: ")
 
-    host = "34.72.70.116"
+    host = "192.168.1.6"
     port = 65432
 
     name = ""

@@ -1,7 +1,7 @@
 import socket
-import _thread
-import curses, datetime
-
+import threading
+import curses, datetime, sys
+from client import input
 
 HOST = '0.0.0.0'   # Standard loopback interface address (localhost)
 PORT = 65432        # Port to listen on (non-privileged ports are > 1023)
@@ -11,16 +11,19 @@ nicks = {}
 
 start = datetime.datetime.now()
 
-def command_log(*args):
+out_put = []
+STRING = ''
+
+def command_log(strscr, *args):
     '''
         Reads out the log file
         Takes in nothing
     '''
     with open("log.txt", "r") as r:
-        print(r.read())
+        print(strscr, r.read())
 
 
-def command_conns(*args):
+def command_conns(strscr, *args):
     '''
     Prints out active connections
     Takes in nothing
@@ -28,34 +31,33 @@ def command_conns(*args):
     for connection in conns:
         if args:
             if str(connection) in args:
-                print("Connection with: \n Name: ", nicks[connection], "\n TCP address: ",
+                print(strscr, "Connection with: \n Name: ", nicks[connection], "\n TCP address: ",
                       conns[connection])
 
         else:
-            print("Connection with: \n Name: ", nicks[connection], "\n TCP address: ",
+            print(strscr, "Connection with: \n Name: ", nicks[connection], "\n TCP address: ",
               conns[connection])
 
 
-def command_disconnect(*args):
+def command_disconnect(strscr, *args):
     '''
     Disconnects the provided players
     Takes in players ids
     '''
+    conn = ""
     for name in args:
         for nick in nicks:
             if nicks[nick] == name:
                 conn = nick
-                break
 
-        if conn in conns:
-            print("Yo")
-            conn.sendall(b"dc")
+                if conn in conns:
+                    conn.sendall(b"dc")
 
         else:
-            print("Invalid name")
+            print(strscr, "Invalid name")
 
 
-def command_ban(*args):
+def command_ban(strscr, *args):
     '''
     Bans provided address
     Takes in ip address
@@ -64,15 +66,15 @@ def command_ban(*args):
         ban_list.append(ban)
 
 
-def command_print_ban_list(*args):
+def command_print_ban_list(strscr, *args):
     '''
     Prints out ban list
     Takes in nothing
     '''
-    print(ban_list)
+    print(strscr, *ban_list)
 
 
-def command_unban(*args):
+def command_unban(strscr, *args):
     '''
     Un-bans provided address
     Takes in ip address
@@ -81,67 +83,67 @@ def command_unban(*args):
         if address in ban_list:
             ban_list.remove(address)
         else:
-            print(address + ":", "Invalid address")
+            print(strscr, address + ":", "Invalid address")
 
 
-def command_shutdown(*args):
+def command_shutdown(strscr, *args):
     '''
     Shutdowns the server
     Takes in nothing
     '''
-    for id in conns:
-        conns[id].sendall(b"dc")
+    for conn in conns:
+        conn.sendall(b"dc")
 
-    quit()
+    sys.exit()
 
 
-def command_list_commands(*args):
+def command_list_commands(strscr, *args):
     '''
     Lists all commands
     Takes in nothing
     '''
-    for command in commands:
-        print(command)
+    # for command in commands:
+    print(strscr, *commands)
 
 
-def command_man(*args):
+def command_man(strscr, *args):
     '''
     Shows what a command does
     Takes in commands
     '''
     for command in args:
         if command in commands:
-            print(command + ":", commands[command].__doc__)
+            print(strscr, command + ":", commands[command].__doc__)
         else:
-            print(command + ":", "Invalid command")
+            print(strscr, command + ":", "Invalid command")
 
 
-def command_uptime(*args):
+def command_uptime(strscr, *args):
     '''
     Show how long the server has been on
     Takes in nothing
     '''
     date = datetime.datetime.now()
 
-    print(date - start)
+    print(strscr, str(date - start))
 
 
-def command_address(*args):
+def command_address(strscr, *args):
     '''
     Show the address and the port of the server
     Takes in nothing
     '''
-    print("IP: ", HOST)
-    print("PORT: ", PORT)
+    print(strscr, "IP: ", HOST, "\nPORT: ", PORT)
 
 
-def command_restart(*args):
+def command_restart(strscr, *args):
     '''
     Restarts the server
     Takes in nothing
     '''
-    command_disconnect(*conns)
-    print("Not yet implemented")
+    # command_disconnect(*conns)
+    print(strscr, "Not yet implemented")
+
 
 commands = {"log": command_log,
             "conns": command_conns,
@@ -173,35 +175,39 @@ def remove_user(conn):
         del conns[conn]
 
 
-def input(stdscr, text, y=0, x=0):
+def refresh_input(stdscr):
     global STRING
-    STRING = ''
-    while True:
-        stdscr.addstr(y, x, text)
-        stdscr.clrtoeol()
-        stdscr.addstr(STRING)
+    stdscr.addstr(curses.LINES-1, 0, ">> ")
+    stdscr.clrtoeol()
+    stdscr.addstr(STRING)
 
-        char = stdscr.get_wch()
 
-        # raise AssertionError(repr(char))
+def print(stdscr, *args):
+    str_args = []
+    for element in args:
+        str_args.append(str(element))
 
-        if isinstance(char, str) and char.isprintable():
-            STRING += char
-        elif char == curses.KEY_BACKSPACE or char == '\x08':
-            STRING = STRING[:-1]
-        elif char == '\n':
-            break
+    text = " ".join(str_args)
 
-        stdscr.refresh()
+    text_list = text.split("\n")
 
-    return STRING
+    text_list.reverse()
+
+    stdscr.clear()
+    for index, text in enumerate(text_list):
+        if curses.LINES - 2 - index > 0:
+            stdscr.insstr(curses.LINES - 2 - index, 0, str(text))
 
 
 def console(stdscr):
+    t = threading.Thread(target=c_main, args=(stdscr,))
+    t.daemon = True
+    t.start()
     with open("log.txt", "w") as r:
         r.write(str(datetime.datetime.now()))
         r.write("\n")
         r.write("Server Started! \n")
+        print(stdscr, "Server Started")
         r.write("\n")
 
     while True:
@@ -211,18 +217,19 @@ def console(stdscr):
         expressions = command[1:]
 
         if command[0] in commands:
-            commands[command[0]](*expressions)
-
+            commands[command[0]](stdscr, *expressions)
+        '''
         else:
             try:
                 exec(c)
 
             except (NameError, SyntaxError) as e:
                 print(e)
+        '''
 
 
 def new_client(conn, addr):
-    print("Connection started with:", addr)
+    # print("Connection started with:", addr)
 
     log("Connection started with: " + str(addr))
 
@@ -235,7 +242,7 @@ def new_client(conn, addr):
         try:
             data = conn.recv(1024).decode("utf-8")
         except ConnectionResetError:
-            print("Connection ended with:", addr)
+            # print("Connection ended with:", addr)
 
             log("Connection ended with: " + str(addr))
 
@@ -248,7 +255,7 @@ def new_client(conn, addr):
             break
 
         if conn not in conns:
-            print("Connection ended with:", addr)
+            # print("Connection ended with:", addr)
 
             log("Connection ended with: " + str(addr))
 
@@ -259,7 +266,7 @@ def new_client(conn, addr):
             break
 
         else:
-            print(addr, ": ", data)
+            # print(addr, ": ", data)
 
             log(str(addr) + " : " + str(data))
 
@@ -274,9 +281,7 @@ def c_main(stdscr):
         s.bind((HOST, PORT))
         s.listen(2)
 
-        _thread.start_new_thread(console, (stdscr, ))
-        print("Server Started")
-
+        # _thread.start_new_thread(console, (stdscr, ))
         while True:
             conn, addr = s.accept()
 
@@ -288,11 +293,14 @@ def c_main(stdscr):
                 conns[conn] = addr
                 nicks[conn] = nick
 
-                _thread.start_new_thread(new_client, (conn, addr))
+                # _thread.start_new_thread(new_client, (conn, addr))
+                t = threading.Thread(target=new_client, args=(conn, addr))
+                t.daemon = True
+                t.start()
 
 
 def main() -> None:
-    return curses.wrapper(c_main)
+    return curses.wrapper(console)
 
 
 if __name__ == '__main__':
