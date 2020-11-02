@@ -19,6 +19,7 @@ def command_log(*args):
     with open("log.txt", "r") as r:
         print(r.read())
 
+
 def command_conns(*args):
     '''
     Prints out active connections
@@ -33,6 +34,7 @@ def command_conns(*args):
         else:
             print("Connection with: \n Name: ", nicks[connection], "\n TCP address: ",
               conns[connection])
+
 
 def command_disconnect(*args):
     '''
@@ -52,6 +54,7 @@ def command_disconnect(*args):
         else:
             print("Invalid name")
 
+
 def command_ban(*args):
     '''
     Bans provided address
@@ -60,12 +63,14 @@ def command_ban(*args):
     for ban in args:
         ban_list.append(ban)
 
+
 def command_print_ban_list(*args):
     '''
     Prints out ban list
     Takes in nothing
     '''
     print(ban_list)
+
 
 def command_unban(*args):
     '''
@@ -78,6 +83,7 @@ def command_unban(*args):
         else:
             print(address + ":", "Invalid address")
 
+
 def command_shutdown(*args):
     '''
     Shutdowns the server
@@ -87,6 +93,7 @@ def command_shutdown(*args):
         conns[id].sendall(b"dc")
 
     quit()
+
 
 def command_list_commands(*args):
     '''
@@ -108,6 +115,7 @@ def command_man(*args):
         else:
             print(command + ":", "Invalid command")
 
+
 def command_uptime(*args):
     '''
     Show how long the server has been on
@@ -117,6 +125,7 @@ def command_uptime(*args):
 
     print(date - start)
 
+
 def command_address(*args):
     '''
     Show the address and the port of the server
@@ -124,6 +133,7 @@ def command_address(*args):
     '''
     print("IP: ", HOST)
     print("PORT: ", PORT)
+
 
 def command_restart(*args):
     '''
@@ -147,26 +157,6 @@ commands = {"log": command_log,
             "address": command_address
             }
 
-man_commands = {
-    "log": "Reads out the log file \n"
-           "Takes in nothing",
-    "conns": "Prints out active connections \n"
-             "Takes in nothing",
-    "dc": "Disconnects the provided players \n"
-          "Takes in players ids",
-    "ban": "Bans provided address \n"
-           "Takes in ip address",
-    "shutdown": "Shutdowns the server \n"
-                "Takes in nothing",
-    "lc": "Lists all commands \n"
-          "Takes in nothing",
-    "man": "Shows what a command does \n"
-           "Takes in commands",
-    "lb": "Prints out ban list \n"
-          "Takes in nothing",
-    "unban": "Un-bans provided address \n"
-             "Takes in ip address"
-}
 
 def log(text):
     with open("log.txt", "a") as r:
@@ -176,12 +166,38 @@ def log(text):
         r.write("\n")
         r.write("\n")
 
+
 def remove_user(conn):
     if conn in conns:
         del nicks[conn]
         del conns[conn]
 
-def console():
+
+def input(stdscr, text, y=0, x=0):
+    global STRING
+    STRING = ''
+    while True:
+        stdscr.addstr(y, x, text)
+        stdscr.clrtoeol()
+        stdscr.addstr(STRING)
+
+        char = stdscr.get_wch()
+
+        # raise AssertionError(repr(char))
+
+        if isinstance(char, str) and char.isprintable():
+            STRING += char
+        elif char == curses.KEY_BACKSPACE or char == '\x08':
+            STRING = STRING[:-1]
+        elif char == '\n':
+            break
+
+        stdscr.refresh()
+
+    return STRING
+
+
+def console(stdscr):
     with open("log.txt", "w") as r:
         r.write(str(datetime.datetime.now()))
         r.write("\n")
@@ -189,7 +205,7 @@ def console():
         r.write("\n")
 
     while True:
-        c = input(">> ")
+        c = input(stdscr, ">> ", curses.LINES-1)
 
         command = c.split(" ")
         expressions = command[1:]
@@ -253,22 +269,31 @@ def new_client(conn, addr):
                     a.sendall(t.encode())
 
 
-with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-    s.bind((HOST, PORT))
-    s.listen(2)
+def c_main(stdscr):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind((HOST, PORT))
+        s.listen(2)
 
-    _thread.start_new_thread(console, ())
-    print("Server Started")
+        _thread.start_new_thread(console, (stdscr, ))
+        print("Server Started")
 
-    while True:
-        conn, addr = s.accept()
+        while True:
+            conn, addr = s.accept()
 
-        if addr[0] in ban_list:
-            conn.close()
+            if addr[0] in ban_list:
+                conn.close()
 
-        else:
-            nick = conn.recv(1024).decode("utf-8")
-            conns[conn] = addr
-            nicks[conn] = nick
+            else:
+                nick = conn.recv(1024).decode("utf-8")
+                conns[conn] = addr
+                nicks[conn] = nick
 
-            _thread.start_new_thread(new_client, (conn, addr))
+                _thread.start_new_thread(new_client, (conn, addr))
+
+
+def main() -> None:
+    return curses.wrapper(c_main)
+
+
+if __name__ == '__main__':
+    main()
