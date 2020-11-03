@@ -56,6 +56,7 @@ def receive_data(conn, stdscr) -> None:
 
         if data == "dc":
             DISCONNECTED = True
+            data = ":You have been disconnected:"
 
         # messages.insert(0, data)
         insert_into_messages(data)
