@@ -1,5 +1,4 @@
-import socket
-import threading
+import threading, os, socket
 import curses, datetime, sys
 from requests import get
 from client import input, refresh_input
@@ -18,6 +17,9 @@ start = datetime.datetime.now()
 out_put = []
 STRING = ''
 STREAM = False
+stdscr = ""
+THREADS = []
+
 
 def command_log(strscr, *args):
     '''
@@ -63,6 +65,7 @@ def command_disconnect(strscr, *args):
 
                 if conn in conns:
                     conn.sendall(b"dc")
+                    del conns[conn]
                     break
 
         else:
@@ -105,6 +108,8 @@ def command_shutdown(strscr, *args):
     '''
     for conn in conns:
         conn.sendall(b"dc")
+
+    log("Server shutting down!")
 
     sys.exit()
 
@@ -153,8 +158,10 @@ def command_restart(strscr, *args):
     Restarts the server
     Takes in nothing
     '''
-    # command_disconnect(*conns)
-    insert_to_output("Not yet implemented")
+    for conn in conns:
+        command_disconnect(nicks[conn])
+    insert_to_output("Server restarting")
+    os.execl(sys.executable, sys.executable, *sys.argv)
 
 
 commands = {"log": command_log,
@@ -225,7 +232,7 @@ def print_output(stdscr):
 
         index += 1
 
-stdscr = ""
+
 def console(yes):
     global stdscr
     stdscr = yes
@@ -275,9 +282,23 @@ def new_client(conn, addr):
         if a != conn:
             a.sendall(t.encode())
 
+    last_message = []
     while True:
         try:
             data = conn.recv(1024).decode("utf-8")
+
+            if len(last_message) >= 5:
+                now = datetime.datetime.now()
+                summ = datetime.datetime(0, 0, 0)
+                for date in last_message:
+                    summ += now - date
+
+                if summ.second <= 2:
+                    log("------------------------------------")
+                    remove_user(conn)
+                    conn.close()
+                    break
+
         except ConnectionResetError:
             # print("Connection ended with:", addr)
 
@@ -304,13 +325,18 @@ def new_client(conn, addr):
 
         else:
             # print(addr, ": ", data)
+            last_message.append(datetime.datetime.now())
 
-            log(str(addr) + " : " + str(data))
+            if len(last_message) > 5:
+                last_message.remove(last_message[0])
 
-            t = nicks[conn] + ": " + data
-            for a in conns:
-                if a != conn:
-                    a.sendall(t.encode())
+            if data != "":
+                log(str(addr) + " : " + str(data))
+
+                t = nicks[conn] + ": " + data
+                for a in conns:
+                    if a != conn:
+                        a.sendall(t.encode())
 
 
 def c_main(yes):
@@ -335,6 +361,7 @@ def c_main(yes):
                 t.daemon = True
                 t.start()
 
+                THREADS.append(t)
 
 def main() -> None:
     return curses.wrapper(console)
