@@ -1,7 +1,6 @@
 import socket
 import threading
 import curses, datetime, sys
-from client import input
 
 HOST = '0.0.0.0'   # Standard loopback interface address (localhost)
 PORT = 65432        # Port to listen on (non-privileged ports are > 1023)
@@ -21,7 +20,6 @@ def command_log(strscr, *args):
     '''
     with open("log.txt", "r") as r:
         print(strscr, r.read())
-
 
 def command_conns(strscr, *args):
     '''
@@ -211,10 +209,16 @@ def console(stdscr):
         r.write("\n")
 
     while True:
-        c = input(stdscr, ">> ", curses.LINES-1)
-
+        stdscr.insstr(curses.LINES - 1, 0, ">> ")
+        curses.echo()
+        c = stdscr.getstr(curses.LINES-1, 3).decode(encoding="utf-8")
+        curses.echo(False)
+        # c = input(stdscr, ">> ", curses.LINES-1)
+        # print(stdscr, c)
         command = c.split(" ")
         expressions = command[1:]
+
+        stdscr.clear()
 
         if command[0] in commands:
             commands[command[0]](stdscr, *expressions)
