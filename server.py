@@ -1,6 +1,11 @@
 import socket
 import threading
 import curses, datetime, sys
+from requests import get
+from client import input, refresh_input
+
+IP = get('https://api.ipify.org').text
+# print('My public IP address is: {}'.format(ip))
 
 HOST = '0.0.0.0'   # Standard loopback interface address (localhost)
 PORT = 65432        # Port to listen on (non-privileged ports are > 1023)
@@ -12,29 +17,38 @@ start = datetime.datetime.now()
 
 out_put = []
 STRING = ''
+STREAM = False
 
 def command_log(strscr, *args):
     '''
-        Reads out the log file
-        Takes in nothing
+    Reads out the log file
+    Takes in nothing
     '''
+    global STREAM
+
     with open("log.txt", "r") as r:
-        print(strscr, r.read())
+        insert_to_output(r.read())
+
+    if "stream" in args:
+        STREAM = not STREAM
+        if STREAM:
+            insert_to_output("stream mode on")
+        else:
+            insert_to_output("stream mode off")
+
 
 def command_conns(strscr, *args):
     '''
     Prints out active connections
     Takes in nothing
     '''
-    for connection in conns:
-        if args:
-            if str(connection) in args:
-                print(strscr, "Connection with: \n Name: ", nicks[connection], "\n TCP address: ",
-                      conns[connection])
+    if len(conns) == 0:
+        insert_to_output("No active connections!")
+        return
 
-        else:
-            print(strscr, "Connection with: \n Name: ", nicks[connection], "\n TCP address: ",
-              conns[connection])
+    for connection in conns:
+        insert_to_output("Connection with: \n Name: ", nicks[connection], "\n TCP address: ",
+                             conns[connection])
 
 
 def command_disconnect(strscr, *args):
@@ -42,7 +56,6 @@ def command_disconnect(strscr, *args):
     Disconnects the provided players
     Takes in players ids
     '''
-    conn = ""
     for name in args:
         for nick in nicks:
             if nicks[nick] == name:
@@ -50,9 +63,10 @@ def command_disconnect(strscr, *args):
 
                 if conn in conns:
                     conn.sendall(b"dc")
+                    break
 
         else:
-            print(strscr, "Invalid name")
+            insert_to_output("Invalid name")
 
 
 def command_ban(strscr, *args):
@@ -69,7 +83,7 @@ def command_print_ban_list(strscr, *args):
     Prints out ban list
     Takes in nothing
     '''
-    print(strscr, *ban_list)
+    insert_to_output(*ban_list)
 
 
 def command_unban(strscr, *args):
@@ -81,7 +95,7 @@ def command_unban(strscr, *args):
         if address in ban_list:
             ban_list.remove(address)
         else:
-            print(strscr, address + ":", "Invalid address")
+            insert_to_output(address + ":", "Invalid address")
 
 
 def command_shutdown(strscr, *args):
@@ -101,7 +115,7 @@ def command_list_commands(strscr, *args):
     Takes in nothing
     '''
     # for command in commands:
-    print(strscr, *commands)
+    insert_to_output(*commands)
 
 
 def command_man(strscr, *args):
@@ -111,9 +125,9 @@ def command_man(strscr, *args):
     '''
     for command in args:
         if command in commands:
-            print(strscr, command + ":", commands[command].__doc__)
+            insert_to_output(command + ":", commands[command].__doc__)
         else:
-            print(strscr, command + ":", "Invalid command")
+            insert_to_output(command + ":", "Invalid command")
 
 
 def command_uptime(strscr, *args):
@@ -123,7 +137,7 @@ def command_uptime(strscr, *args):
     '''
     date = datetime.datetime.now()
 
-    print(strscr, str(date - start))
+    insert_to_output(str(date - start))
 
 
 def command_address(strscr, *args):
@@ -131,7 +145,7 @@ def command_address(strscr, *args):
     Show the address and the port of the server
     Takes in nothing
     '''
-    print(strscr, "IP: ", HOST, "\nPORT: ", PORT)
+    insert_to_output("IP: ", IP, "\nPORT: ", PORT)
 
 
 def command_restart(strscr, *args):
@@ -140,7 +154,7 @@ def command_restart(strscr, *args):
     Takes in nothing
     '''
     # command_disconnect(*conns)
-    print(strscr, "Not yet implemented")
+    insert_to_output("Not yet implemented")
 
 
 commands = {"log": command_log,
@@ -166,6 +180,16 @@ def log(text):
         r.write("\n")
         r.write("\n")
 
+    if STREAM:
+        text_o = str(datetime.datetime.now())
+        text_o += "\n"
+        text_o += str(text)
+        text_o += "\n"
+        text_o += "\n"
+        insert_to_output(text_o)
+
+        print_output(stdscr)
+        refresh_input(stdscr)
 
 def remove_user(conn):
     if conn in conns:
@@ -173,31 +197,38 @@ def remove_user(conn):
         del conns[conn]
 
 
-def refresh_input(stdscr):
-    global STRING
-    stdscr.addstr(curses.LINES-1, 0, ">> ")
-    stdscr.clrtoeol()
-    stdscr.addstr(STRING)
-
-
-def print(stdscr, *args):
+def insert_to_output(*args):
     str_args = []
     for element in args:
         str_args.append(str(element))
 
     text = " ".join(str_args)
 
+    text = text.strip()
+
     text_list = text.split("\n")
 
     text_list.reverse()
 
+    out_put.insert(0, text_list)
+
+
+def print_output(stdscr):
+    index = 0
     stdscr.clear()
-    for index, text in enumerate(text_list):
-        if curses.LINES - 2 - index > 0:
-            stdscr.insstr(curses.LINES - 2 - index, 0, str(text))
+    for element in out_put:
+        for text in element:
+            if curses.LINES - 2 - index > 0:
+                stdscr.insstr(curses.LINES - 2 - index, 0, str(text))
 
+            index += 1
 
-def console(stdscr):
+        index += 1
+
+stdscr = ""
+def console(yes):
+    global stdscr
+    stdscr = yes
     t = threading.Thread(target=c_main, args=(stdscr,))
     t.daemon = True
     t.start()
@@ -205,23 +236,25 @@ def console(stdscr):
         r.write(str(datetime.datetime.now()))
         r.write("\n")
         r.write("Server Started! \n")
-        print(stdscr, "Server Started")
+        insert_to_output("Server Started")
         r.write("\n")
 
+    print_output(stdscr)
     while True:
         stdscr.insstr(curses.LINES - 1, 0, ">> ")
-        curses.echo()
-        c = stdscr.getstr(curses.LINES-1, 3).decode(encoding="utf-8")
-        curses.echo(False)
-        # c = input(stdscr, ">> ", curses.LINES-1)
+        # curses.echo()
+        # c = stdscr.getstr(curses.LINES-1, 3).decode(encoding="utf-8")
+        # curses.echo(False)
+        c = input(stdscr, ">> ", curses.LINES-1)
         # print(stdscr, c)
         command = c.split(" ")
         expressions = command[1:]
 
-        stdscr.clear()
-
         if command[0] in commands:
             commands[command[0]](stdscr, *expressions)
+
+        print_output(stdscr)
+
         '''
         else:
             try:
@@ -280,7 +313,7 @@ def new_client(conn, addr):
                     a.sendall(t.encode())
 
 
-def c_main(stdscr):
+def c_main(yes):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind((HOST, PORT))
         s.listen(2)

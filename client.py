@@ -2,6 +2,9 @@ import curses, socket, sys, threading
 
 messages = []
 STRING = ''
+host = "127.0.0.1"
+port = 65432
+DISCONNECTED = False
 
 
 def input(stdscr, text, y=0, x=0):
@@ -18,7 +21,7 @@ def input(stdscr, text, y=0, x=0):
 
         if isinstance(char, str) and char.isprintable():
             STRING += char
-        elif char == curses.KEY_BACKSPACE or char == '\x08':
+        elif char == curses.KEY_BACKSPACE or char == '\x08' or char == '\b':
             STRING = STRING[:-1]
         elif char == '\n':
             break
@@ -47,11 +50,12 @@ def print_messages(stdscr) -> None:
 
 
 def receive_data(conn, stdscr) -> None:
+    global DISCONNECTED
     while True:
         data = conn.recv(1024).decode("utf-8")
 
         if data == "dc":
-            raise AssertionError("lel")
+            DISCONNECTED = True
 
         # messages.insert(0, data)
         insert_into_messages(data)
@@ -76,9 +80,6 @@ commands_dict = {
 def c_main(stdscr) -> None:
     # host = input(stdscr, "Input Address: ")
     # port = input(stdscr, "Input Port: ")
-
-    host = "192.168.1.6"
-    port = 65432
 
     name = ""
     while len(name) <= 0:
@@ -108,13 +109,15 @@ def c_main(stdscr) -> None:
         while True:
             message = input(stdscr, ">> ", curses.LINES-1)
 
+            if DISCONNECTED:
+                command_dc(s)
+
             if len(message) > 0:
                 msg = message.split()
 
                 if msg[0] in commands_dict:
                     commands_dict[msg[0]](s,*msg[1:])
 
-                # messages.insert(0, (name + ": " + message))
                 insert_into_messages(name + ": " + message)
 
                 print_messages(stdscr)
