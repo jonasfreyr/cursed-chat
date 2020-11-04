@@ -99,11 +99,9 @@ def c_main(stdscr) -> None:
 
         # _thread.start_new_thread(receive_data, (s, stdscr))
 
-
         receive_data_thread = threading.Thread(target=receive_data, args=(s, stdscr))
         receive_data_thread.daemon = True
         receive_data_thread.start()
-
 
         # process = multiprocessing.Process(target=receive_data, args=(s, stdscr))
         # process.start()

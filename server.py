@@ -19,6 +19,8 @@ STRING = ''
 STREAM = False
 stdscr = ""
 THREADS = []
+BANNED_TEXT_FILE = "ban_list.txt"
+LOG_TEXT_FILE = "log.txt"
 
 
 def command_log(strscr, *args):
@@ -29,7 +31,7 @@ def command_log(strscr, *args):
     '''
     global STREAM
 
-    with open("log.txt", "r") as r:
+    with open(LOG_TEXT_FILE, "r") as r:
         insert_to_output(r.read())
 
     if "-stream" in args:
@@ -81,6 +83,8 @@ def command_ban(strscr, *args):
     for ban in args:
         ban_list.append(ban)
 
+    write_ban_list()
+
 
 def command_print_ban_list(strscr, *args):
     '''
@@ -90,6 +94,12 @@ def command_print_ban_list(strscr, *args):
     insert_to_output("BAN LIST:")
     for banned in ban_list:
         insert_to_output("  " + str(banned))
+
+
+def write_ban_list():
+    with open(BANNED_TEXT_FILE, "w") as r:
+        for ban in ban_list:
+            r.write(ban + "\n")
 
 
 def command_unban(strscr, *args):
@@ -102,6 +112,8 @@ def command_unban(strscr, *args):
             ban_list.remove(address)
         else:
             insert_to_output(address + ":", "Invalid address")
+
+    write_ban_list()
 
 
 def command_shutdown(strscr, *args):
@@ -160,6 +172,7 @@ def command_restart(strscr, *args):
     '''
     Restarts the server
     Takes in nothing
+    Unreliable for anything other than linux
     '''
     for conn in conns:
         command_disconnect(nicks[conn])
@@ -183,7 +196,7 @@ commands = {"log": command_log,
 
 
 def log(text):
-    with open("log.txt", "a") as r:
+    with open(LOG_TEXT_FILE, "a") as r:
         r.write(str(datetime.datetime.now()))
         r.write("\n")
         r.write(str(text))
@@ -235,8 +248,9 @@ def print_output(stdscr):
                 stdscr.insstr(curses.LINES - 2 - index, 0, str(text))
 
             index += 1
-
-        # index += 1
+        if curses.LINES - 2 - index > 0:
+            stdscr.insstr(curses.LINES - 2 - index, 0, "-----------------------")
+            index += 1
 
 
 def console(yes):
@@ -245,12 +259,19 @@ def console(yes):
     t = threading.Thread(target=c_main, args=(stdscr,))
     t.daemon = True
     t.start()
-    with open("log.txt", "w") as r:
+    with open(LOG_TEXT_FILE, "w") as r:
         r.write(str(datetime.datetime.now()))
         r.write("\n")
         r.write("Server Started! \n")
         insert_to_output("Server Started")
         r.write("\n")
+
+    with open(BANNED_TEXT_FILE, "r") as r:
+        banned_text = r.read()
+
+    banned_list = banned_text.split()
+    for banned in banned_list:
+        ban_list.append(banned)
 
     print_output(stdscr)
     while True:
