@@ -3,7 +3,8 @@ import curses, datetime, sys
 from requests import get
 from client import input, refresh_input
 
-IP = get('https://api.ipify.org').text
+WAN_IP = get('https://api.ipify.org').text
+LOCAL_IP = socket.gethostbyname(socket.gethostname())
 # print('My public IP address is: {}'.format(ip))
 
 HOST = '0.0.0.0'   # Standard loopback interface address (localhost)
@@ -165,7 +166,7 @@ def command_address(strscr, *args):
     Show the address and the port of the server
     Takes in nothing
     '''
-    insert_to_output("IP: ", IP, "\nPORT: ", PORT)
+    insert_to_output("WAN IP: ", WAN_IP, "\nLocal IP: ", LOCAL_IP, "\nPORT: ", PORT)
 
 
 def command_restart(strscr, *args):
@@ -389,6 +390,7 @@ def c_main(yes):
                 t.start()
 
                 THREADS.append(t)
+
 
 def main() -> None:
     return curses.wrapper(console)
