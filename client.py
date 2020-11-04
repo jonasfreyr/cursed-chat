@@ -36,6 +36,7 @@ def refresh_input(stdscr):
     stdscr.addstr(curses.LINES-1, 0, ">> ")
     stdscr.clrtoeol()
     stdscr.addstr(STRING)
+    stdscr.refresh()
 
 
 def print_messages(stdscr) -> None:

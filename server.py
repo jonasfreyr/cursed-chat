@@ -25,13 +25,14 @@ def command_log(strscr, *args):
     '''
     Reads out the log file
     Takes in nothing
+    -stream Turns on stream mode
     '''
     global STREAM
 
     with open("log.txt", "r") as r:
         insert_to_output(r.read())
 
-    if "stream" in args:
+    if "-stream" in args:
         STREAM = not STREAM
         if STREAM:
             insert_to_output("stream mode on")
@@ -86,7 +87,9 @@ def command_print_ban_list(strscr, *args):
     Prints out ban list
     Takes in nothing
     '''
-    insert_to_output(*ban_list)
+    insert_to_output("BAN LIST:")
+    for banned in ban_list:
+        insert_to_output("  " + str(banned))
 
 
 def command_unban(strscr, *args):
@@ -198,6 +201,7 @@ def log(text):
         print_output(stdscr)
         refresh_input(stdscr)
 
+
 def remove_user(conn):
     if conn in conns:
         del nicks[conn]
@@ -211,7 +215,9 @@ def insert_to_output(*args):
 
     text = " ".join(str_args)
 
-    text = text.strip()
+    # text = text.strip()
+    if text[-1] == "\n":
+        text = text[:-1]
 
     text_list = text.split("\n")
 
@@ -230,7 +236,7 @@ def print_output(stdscr):
 
             index += 1
 
-        index += 1
+        # index += 1
 
 
 def console(yes):
