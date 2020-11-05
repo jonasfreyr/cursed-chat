@@ -394,11 +394,11 @@ def c_main(yes):
             conn, addr = s.accept()
 
             if conn not in connected_date_dict:
-                connected_date_dict[conn] = datetime.datetime.now()
+                connected_date_dict[addr[0]] = datetime.datetime.now()
 
             else:
-                if (connected_date_dict[conn] - datetime.datetime.now()).seconds <= 2:
-                    connected_date_dict[conn] = datetime.datetime.now()
+                if (connected_date_dict[addr[0]] - datetime.datetime.now()).seconds <= 2:
+                    connected_date_dict[addr[0]] = datetime.datetime.now()
                     conn.close()
                     continue
 
