@@ -353,10 +353,11 @@ def new_client(conn, addr):
 
             log("Connection ended with: " + str(addr))
 
-            t = nicks[conn] + ": disconnected"
-            for a in conns:
-                if a != conn:
-                    a.sendall(t.encode())
+            if conn in nicks:
+                t = nicks[conn] + ": disconnected"
+                for a in conns:
+                    if a != conn:
+                        a.sendall(t.encode())
             break
 
         else:
