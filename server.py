@@ -307,7 +307,8 @@ def new_client(conn, addr):
     log("Connection started with: " + str(addr))
 
     t = nicks[conn] + ": connected"
-    for a in conns:
+    conns_copy = conns.copy()
+    for a in conns_copy:
         if a != conn:
             try:
                 a.sendall(t.encode())
@@ -323,7 +324,7 @@ def new_client(conn, addr):
 
             if len(last_message) >= 5:
                 now = datetime.datetime.now()
-                summ = datetime.datetime(0, 0, 0)
+                summ = datetime.datetime(1, 1, 1)
                 for date in last_message:
                     summ += now - date
 
@@ -368,9 +369,16 @@ def new_client(conn, addr):
                 log(str(addr) + " : " + str(data))
 
                 t = nicks[conn] + ": " + data
-                for a in conns:
+
+                conns_copy = conns.copy()
+                for a in conns_copy:
                     if a != conn:
-                        a.sendall(t.encode())
+                        try:
+                            a.sendall(t.encode())
+                        except:
+                            log("Connection ended with: " + conn.getsockname()[0])
+                            a.close()
+                            remove_user(a)
 
 
 def c_main(yes):
