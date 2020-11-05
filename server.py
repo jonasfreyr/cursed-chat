@@ -330,7 +330,7 @@ def new_client(conn, addr):
 
                 if summ.second <= 2:
                     log("Connection ended with: " + str(addr))
-                    conn.sendall("dc")
+                    conn.sendall(b"dc")
                     remove_user(conn)
                     conn.close()
                     break
