@@ -388,8 +388,18 @@ def c_main(yes):
         s.listen(2)
 
         # _thread.start_new_thread(console, (stdscr, ))
+        connected_date_dict = {}
         while True:
             conn, addr = s.accept()
+
+            if conn not in connected_date_dict:
+                connected_date_dict[conn] = datetime.datetime.now()
+
+            else:
+                if (connected_date_dict[conn] - datetime.datetime.now()).seconds <= 2:
+                    connected_date_dict[conn] = datetime.datetime.now()
+                    conn.close()
+                    continue
 
             if addr[0] in ban_list:
                 conn.close()
