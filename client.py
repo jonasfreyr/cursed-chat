@@ -96,7 +96,11 @@ def c_main(stdscr) -> None:
             stdscr.insstr(curses.LINES - 2, 0, "Name not long enough")
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.connect((host, port))
+        try:
+            s.connect((host, port))
+
+        except ConnectionRefusedError:
+            sys.exit()
 
         nameE = name.encode()
         s.sendall(nameE)
