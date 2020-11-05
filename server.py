@@ -397,7 +397,7 @@ def c_main(yes):
                 connected_date_dict[addr[0]] = datetime.datetime.now()
 
             else:
-                if (connected_date_dict[addr[0]] - datetime.datetime.now()).seconds <= 2:
+                if (datetime.datetime.now() - connected_date_dict[addr[0]]).seconds <= 2:
                     connected_date_dict[addr[0]] = datetime.datetime.now()
                     conn.close()
                     continue
