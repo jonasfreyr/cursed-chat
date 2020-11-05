@@ -69,7 +69,8 @@ def command_disconnect(strscr, *args):
 
                 if conn in conns:
                     conn.sendall(b"dc")
-                    del conns[conn]
+                    conn.close()
+                    remove_user(conn)
                     break
 
         else:
