@@ -393,7 +393,11 @@ def c_main(yes):
 
 
 def main() -> None:
-    return curses.wrapper(console)
+    try:
+        return curses.wrapper(console)
+
+    except:
+        log(sys.exc_info()[0])
 
 
 if __name__ == '__main__':

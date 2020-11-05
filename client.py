@@ -2,7 +2,7 @@ import curses, socket, sys, threading
 
 messages = []
 STRING = ''
-host = "127.0.0.1"
+host = "34.71.210.72"
 port = 65432
 DISCONNECTED = False
 
