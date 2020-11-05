@@ -22,7 +22,7 @@ stdscr = ""
 THREADS = []
 BANNED_TEXT_FILE = "ban_list.txt"
 LOG_TEXT_FILE = "log.txt"
-
+MAX_SIZE_OF_LOG = 500
 
 def command_log(strscr, *args):
     '''
@@ -198,12 +198,14 @@ commands = {"log": command_log,
 
 
 def log(text):
-    with open(LOG_TEXT_FILE, "a") as r:
-        r.write(str(datetime.datetime.now()))
-        r.write("\n")
-        r.write(str(text))
-        r.write("\n")
-        r.write("\n")
+    log_size = os.path.getsize(LOG_TEXT_FILE) / 1000000
+    if log_size < MAX_SIZE_OF_LOG:
+        with open(LOG_TEXT_FILE, "a") as r:
+            r.write(str(datetime.datetime.now()))
+            r.write("\n")
+            r.write(str(text))
+            r.write("\n")
+            r.write("\n")
 
     if STREAM:
         text_o = str(datetime.datetime.now())
@@ -396,11 +398,10 @@ def c_main(yes):
             if conn not in connected_date_dict:
                 connected_date_dict[addr[0]] = datetime.datetime.now()
 
-            else:
-                if (datetime.datetime.now() - connected_date_dict[addr[0]]).seconds <= 2:
-                    connected_date_dict[addr[0]] = datetime.datetime.now()
-                    conn.close()
-                    continue
+            elif (datetime.datetime.now() - connected_date_dict[addr[0]]).seconds <= 2:
+                connected_date_dict[addr[0]] = datetime.datetime.now()
+                conn.close()
+                continue
 
             if addr[0] in ban_list:
                 conn.close()
