@@ -52,8 +52,12 @@ def print_messages(stdscr) -> None:
 
 def receive_data(conn, stdscr) -> None:
     global DISCONNECTED
-    while True:
-        data = conn.recv(1024).decode("utf-8")
+    while not DISCONNECTED:
+        try:
+            data = conn.recv(1024).decode("utf-8")
+
+        except:
+            data = "dc"
 
         if data == "dc":
             DISCONNECTED = True

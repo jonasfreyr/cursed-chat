@@ -309,7 +309,12 @@ def new_client(conn, addr):
     t = nicks[conn] + ": connected"
     for a in conns:
         if a != conn:
-            a.sendall(t.encode())
+            try:
+                a.sendall(t.encode())
+            except:
+                log("Connection ended with: " + conn.getsockname()[0])
+                a.close()
+                remove_user(a)
 
     last_message = []
     while True:
