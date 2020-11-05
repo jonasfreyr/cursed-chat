@@ -399,6 +399,7 @@ def main() -> None:
 
     except:
         log(sys.exc_info()[0])
+        sys.exit()
 
 
 if __name__ == '__main__':
