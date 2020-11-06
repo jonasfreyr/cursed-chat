@@ -21,7 +21,7 @@ def input(stdscr, text, y=0, x=0):
 
         if isinstance(char, str) and char.isprintable():
             STRING += char
-        elif char == curses.KEY_BACKSPACE or char == '\x08' or char == '\b':
+        elif char == curses.KEY_BACKSPACE or char == '\x08' or char == '\b' or char == '\x7f':
             STRING = STRING[:-1]
         elif char == '\n':
             break
