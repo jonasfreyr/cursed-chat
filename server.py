@@ -24,16 +24,16 @@ BANNED_TEXT_FILE = "ban_list.txt"
 LOG_TEXT_FILE = "log.txt"
 MAX_SIZE_OF_LOG = 500
 
+
 def command_log(strscr, *args):
     '''
     Reads out the log file
     Takes in nothing
-    -stream Turns on stream mode
+
+    Optional commands
+        -stream Turns on stream mode
     '''
     global STREAM
-
-    with open(LOG_TEXT_FILE, "r") as r:
-        insert_to_output(r.read())
 
     if "-stream" in args:
         STREAM = not STREAM
@@ -41,6 +41,10 @@ def command_log(strscr, *args):
             insert_to_output("stream mode on")
         else:
             insert_to_output("stream mode off")
+
+    else:
+        with open(LOG_TEXT_FILE, "r") as r:
+            insert_to_output(r.read())
 
 
 def command_conns(strscr, *args):
@@ -59,8 +63,8 @@ def command_conns(strscr, *args):
 
 def command_disconnect(strscr, *args):
     '''
-    Disconnects the provided players
-    Takes in players ids
+    Disconnects the provided user
+    Takes in username
     '''
     for name in args:
         for nick in nicks:
@@ -304,6 +308,18 @@ def console(yes):
 
 
 def new_client(conn, addr):
+    while True:
+        nick = conn.recv(1024).decode("utf-8")
+
+        if nick not in nicks.values():
+            conn.sendall(b"True")
+
+            conns[conn] = addr
+            nicks[conn] = nick
+            break
+        else:
+            conn.sendall(b"False")
+
     # print("Connection started with:", addr)
 
     log("Connection started with: " + str(addr))
@@ -407,10 +423,6 @@ def c_main(yes):
                 conn.close()
 
             else:
-                nick = conn.recv(1024).decode("utf-8")
-                conns[conn] = addr
-                nicks[conn] = nick
-
                 # _thread.start_new_thread(new_client, (conn, addr))
                 t = threading.Thread(target=new_client, args=(conn, addr))
                 t.daemon = True

@@ -21,7 +21,7 @@ def input(stdscr, text, y=0, x=0):
 
         if isinstance(char, str) and char.isprintable():
             STRING += char
-        elif char == curses.KEY_BACKSPACE or char == '\x08' or char == '\b':
+        elif char == curses.KEY_BACKSPACE or char == '\x08' or char == '\b' or char == '\x7f':
             STRING = STRING[:-1]
         elif char == '\n':
             break
@@ -83,17 +83,14 @@ commands_dict = {
     ":dc:": command_dc
 }
 
+
+def decode_message(msg):
+    return msg.decode().split("|")
+
+
 def c_main(stdscr) -> None:
     # host = input(stdscr, "Input Address: ")
     # port = input(stdscr, "Input Port: ")
-
-    name = ""
-    while len(name) <= 0:
-        name = input(stdscr, "Input Name: ", curses.LINES - 1)
-
-        if len(name) <= 0:
-            stdscr.clear()
-            stdscr.insstr(curses.LINES - 2, 0, "Name not long enough")
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         try:
@@ -102,8 +99,22 @@ def c_main(stdscr) -> None:
         except ConnectionRefusedError:
             sys.exit()
 
-        nameE = name.encode()
-        s.sendall(nameE)
+        NAME = False
+        while not NAME:
+            name = input(stdscr, "Input Name: ", curses.LINES - 1)
+
+            if len(name) <= 0:
+                stdscr.clear()
+                stdscr.insstr(curses.LINES - 2, 0, "Name not long enough")
+            else:
+                name_e = name.encode()
+                s.sendall(name_e)
+
+                NAME = eval(s.recv(1024).decode())
+
+                stdscr.clear()
+                if not NAME:
+                    stdscr.insstr(curses.LINES - 2, 0, "Username already taken")
 
         # _thread.start_new_thread(receive_data, (s, stdscr))
 
