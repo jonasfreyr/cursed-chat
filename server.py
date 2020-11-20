@@ -446,24 +446,24 @@ def v_main():
     VOICE_PORT = PORT + 1
 
     log("V main running")
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp:
+            udp.bind((HOST, VOICE_PORT))
 
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp:
-        udp.bind((HOST, VOICE_PORT))
+            voice_connected_date_dict = []
+            while True:
 
-        voice_connected_date_dict = []
-        while True:
-            try:
-                soundData, addr = udp.recvfrom(CHUNK * CHANNELS * 2)
+                    soundData, addr = udp.recvfrom(CHUNK * CHANNELS * 2)
 
-                if addr not in voice_connected_date_dict:
-                    voice_connected_date_dict.append(addr)
+                    if addr not in voice_connected_date_dict:
+                        voice_connected_date_dict.append(addr)
 
-                for conn in voice_connected_date_dict:
-                    if conn != addr:
-                        udp.sendto(soundData, conn)
+                    for conn in voice_connected_date_dict:
+                        if conn != addr:
+                            udp.sendto(soundData, conn)
 
-            except:
-                log(sys.exc_info()[0])
+    except:
+        log(sys.exc_info()[0])
 
 
 def c_main(yes):
