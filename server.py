@@ -23,6 +23,8 @@ BANNED_TEXT_FILE = "ban_list.txt"
 LOG_TEXT_FILE = "log.txt"
 MAX_SIZE_OF_LOG = 500
 
+voice_connected_date_dict = []
+
 
 def input(stdscr, text, y=0, x=0):
     global STRING
@@ -91,6 +93,8 @@ def command_conns(strscr, *args):
         insert_to_output("Connection with: \n Name: ", nicks[connection], "\n TCP address: ",
                              conns[connection])
 
+    for address in voice_connected_date_dict:
+        insert_to_output("Address:", address)
 
 def command_disconnect(strscr, *args):
     '''
@@ -450,7 +454,7 @@ def v_main():
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp:
             udp.bind((HOST, VOICE_PORT))
 
-            voice_connected_date_dict = []
+
             while True:
 
                     soundData, addr = udp.recvfrom(CHUNK * CHANNELS * 10)

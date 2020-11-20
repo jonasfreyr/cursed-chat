@@ -94,7 +94,7 @@ def send_voice_data(udp):
 def receive_voice_data(udp):
     while True:
         try:
-            soundData, addr = udp.recvfrom(CHUNK * CHANNELS * 2)
+            soundData, addr = udp.recvfrom(CHUNK * CHANNELS * 10)
             incoming_frames.append(soundData)
         except:
             with open("log.txt", "w") as r:
