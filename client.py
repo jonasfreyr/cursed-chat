@@ -2,7 +2,7 @@ import curses, socket, sys, threading, pyaudio
 
 messages = []
 STRING = ''
-host = "34.71.210.72"
+host = "34.121.32.86"
 port = 65432
 voice_port_sending = port + 1
 voice_port_receiving = port + 3

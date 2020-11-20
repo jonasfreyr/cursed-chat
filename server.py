@@ -300,13 +300,15 @@ def console(yes):
     t.daemon = True
     t2.daemon = True
     t.start()
-    t2.start()
+
     with open(LOG_TEXT_FILE, "w") as r:
         r.write(str(datetime.datetime.now()))
         r.write("\n")
         r.write("Server Started! \n")
         insert_to_output("Server Started")
         r.write("\n")
+
+    t2.start()
 
     with open(BANNED_TEXT_FILE, "r") as r:
         banned_text = r.read()
