@@ -1,7 +1,6 @@
 import threading, os, socket
 import curses, datetime, sys
 from requests import get
-from client import input, refresh_input, play
 
 WAN_IP = get('https://api.ipify.org').text
 LOCAL_IP = socket.gethostbyname(socket.gethostname())
@@ -23,6 +22,38 @@ THREADS = []
 BANNED_TEXT_FILE = "ban_list.txt"
 LOG_TEXT_FILE = "log.txt"
 MAX_SIZE_OF_LOG = 500
+
+
+def input(stdscr, text, y=0, x=0):
+    global STRING
+    STRING = ''
+    while True:
+        stdscr.addstr(y, x, text)
+        stdscr.clrtoeol()
+        stdscr.addstr(STRING)
+
+        char = stdscr.get_wch()
+
+        # raise AssertionError(repr(char))
+
+        if isinstance(char, str) and char.isprintable():
+            STRING += char
+        elif char == curses.KEY_BACKSPACE or char == '\x08' or char == '\b' or char == '\x7f':
+            STRING = STRING[:-1]
+        elif char == '\n':
+            break
+
+        stdscr.refresh()
+
+    return STRING
+
+
+def refresh_input(stdscr):
+    global STRING
+    stdscr.addstr(curses.LINES-1, 0, ">> ")
+    stdscr.clrtoeol()
+    stdscr.addstr(STRING)
+    stdscr.refresh()
 
 
 def command_log(strscr, *args):
