@@ -1,4 +1,4 @@
-import threading, os, socket, pyaudio
+import threading, os, socket
 import curses, datetime, sys
 from requests import get
 from client import input, refresh_input, play
@@ -405,7 +405,7 @@ def new_client(conn, addr):
 
 
 def v_main():
-    FORMAT = pyaudio.paInt16
+    # FORMAT = pyaudio.paInt16
     CHUNK = 1024
     CHANNELS = 2
     RATE = 44100
