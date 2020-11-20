@@ -1,7 +1,7 @@
-import threading, os, socket
+import threading, os, socket, pyaudio
 import curses, datetime, sys
 from requests import get
-from client import input, refresh_input
+from client import input, refresh_input, play
 
 WAN_IP = get('https://api.ipify.org').text
 LOCAL_IP = socket.gethostbyname(socket.gethostname())
@@ -265,8 +265,11 @@ def console(yes):
     global stdscr
     stdscr = yes
     t = threading.Thread(target=c_main, args=(stdscr,))
+    t2 = threading.Thread(target=v_main, args=())
     t.daemon = True
+    t2.daemon = True
     t.start()
+    t2.start()
     with open(LOG_TEXT_FILE, "w") as r:
         r.write(str(datetime.datetime.now()))
         r.write("\n")
@@ -399,6 +402,35 @@ def new_client(conn, addr):
                             log("Connection ended with: " + conn.getsockname()[0])
                             a.close()
                             remove_user(a)
+
+
+def v_main():
+    FORMAT = pyaudio.paInt16
+    CHUNK = 1024
+    CHANNELS = 2
+    RATE = 44100
+
+    VOICE_PORT = PORT + 1
+
+    log("V main running")
+
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp:
+        udp.bind((HOST, VOICE_PORT))
+
+        voice_connected_date_dict = []
+        while True:
+            try:
+                soundData, addr = udp.recvfrom(CHUNK * CHANNELS * 2)
+
+                if addr not in voice_connected_date_dict:
+                    voice_connected_date_dict.append(addr)
+
+                for conn in voice_connected_date_dict:
+                    if conn != addr:
+                        udp.sendto(soundData, conn)
+
+            except:
+                log(sys.exc_info()[0])
 
 
 def c_main(yes):

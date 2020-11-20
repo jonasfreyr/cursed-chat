@@ -1,10 +1,22 @@
-import curses, socket, sys, threading
+import curses, socket, sys, threading, pyaudio
 
 messages = []
 STRING = ''
 host = "34.71.210.72"
 port = 65432
+voice_port_sending = port + 1
+voice_port_receiving = port + 3
 DISCONNECTED = False
+
+incoming_frames = []
+outgoing_frames = []
+
+FORMAT = pyaudio.paInt16
+CHUNK = 1024
+CHANNELS = 2
+RATE = 44100
+
+p = pyaudio.PyAudio()
 
 
 def input(stdscr, text, y=0, x=0):
@@ -50,6 +62,31 @@ def print_messages(stdscr) -> None:
     stdscr.refresh()
 
 
+def play(stream, CHUNK):
+    BUFFER = 10
+    while True:
+            if len(incoming_frames) == BUFFER:
+                while True:
+                    stream.write(incoming_frames.pop(0), CHUNK)
+
+
+def record(stream, CHUNK):
+    while True:
+        outgoing_frames.append(stream.read(CHUNK))
+
+
+def send_voice_data(udp):
+    while True:
+        if len(outgoing_frames) > 0:
+            udp.sendto(outgoing_frames.pop(0), (host, voice_port_sending))
+
+
+def receive_voice_data(udp):
+    while True:
+        soundData, addr = udp.recvfrom(CHUNK * CHANNELS * 2)
+        incoming_frames.append(soundData)
+
+
 def receive_data(conn, stdscr) -> None:
     global DISCONNECTED
     while not DISCONNECTED:
@@ -91,7 +128,8 @@ def decode_message(msg):
 def c_main(stdscr) -> None:
     # host = input(stdscr, "Input Address: ")
     # port = input(stdscr, "Input Port: ")
-
+    udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    udp.bind(('', voice_port_receiving))
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         try:
             s.connect((host, port))
@@ -117,10 +155,40 @@ def c_main(stdscr) -> None:
                     stdscr.insstr(curses.LINES - 2, 0, "Username already taken")
 
         # _thread.start_new_thread(receive_data, (s, stdscr))
+        stream_out = p.open(format=FORMAT,
+                        channels=CHANNELS,
+                        rate=RATE,
+                        output=True,
+                        frames_per_buffer=CHUNK,
+                        )
 
+        stream_in = p.open(format=FORMAT,
+                            channels=CHANNELS,
+                            rate=RATE,
+                            input=True,
+                            frames_per_buffer=CHUNK,
+                            )
+
+        playing_sound_thread = threading.Thread(target=record, args=(stream_in, CHUNK))
+        playing_sound_thread.daemon = True
+        playing_sound_thread.start()
+
+        playing_sound_thread = threading.Thread(target=play, args=(stream_out, CHUNK))
+        playing_sound_thread.daemon = True
+        playing_sound_thread.start()
+
+        send_voice_data_thread = threading.Thread(target=send_voice_data, args=(udp,))
+        send_voice_data_thread.daemon = True
+        send_voice_data_thread.start()
+
+        receive_data_voice_thread = threading.Thread(target=receive_voice_data, args=(udp, ))
         receive_data_thread = threading.Thread(target=receive_data, args=(s, stdscr))
+
+        receive_data_voice_thread.daemon = True
         receive_data_thread.daemon = True
+
         receive_data_thread.start()
+        receive_data_voice_thread.start()
 
         # process = multiprocessing.Process(target=receive_data, args=(s, stdscr))
         # process.start()
