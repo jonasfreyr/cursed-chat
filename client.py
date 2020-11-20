@@ -65,27 +65,40 @@ def print_messages(stdscr) -> None:
 def play(stream, CHUNK):
     BUFFER = 10
     while True:
+        try:
             if len(incoming_frames) == BUFFER:
                 while True:
                     stream.write(incoming_frames.pop(0), CHUNK)
-
+        except:
+            with open("log.txt", "w") as r:
+                r.write(sys.exc_info()[0])
 
 def record(stream, CHUNK):
     while True:
-        outgoing_frames.append(stream.read(CHUNK))
-
+        try:
+            outgoing_frames.append(stream.read(CHUNK))
+        except:
+            with open("log.txt", "w") as r:
+                r.write(sys.exc_info()[0])
 
 def send_voice_data(udp):
     while True:
-        if len(outgoing_frames) > 0:
-            udp.sendto(outgoing_frames.pop(0), (host, voice_port_sending))
+        try:
+            if len(outgoing_frames) > 0:
+                udp.sendto(outgoing_frames.pop(0), (host, voice_port_sending))
+        except:
+            with open("log.txt", "w") as r:
+                r.write(sys.exc_info()[0])
 
 
 def receive_voice_data(udp):
     while True:
-        soundData, addr = udp.recvfrom(CHUNK * CHANNELS * 2)
-        incoming_frames.append(soundData)
-
+        try:
+            soundData, addr = udp.recvfrom(CHUNK * CHANNELS * 2)
+            incoming_frames.append(soundData)
+        except:
+            with open("log.txt", "w") as r:
+                r.write(sys.exc_info()[0])
 
 def receive_data(conn, stdscr) -> None:
     global DISCONNECTED
