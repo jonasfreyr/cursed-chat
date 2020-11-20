@@ -463,8 +463,8 @@ def v_main():
                         voice_connected_date_dict.append(addr)
 
                     for conn in voice_connected_date_dict:
-                        # if conn != addr:
-                        udp.sendto(soundData, conn)
+                        if conn != addr:
+                            udp.sendto(soundData, conn)
 
     except:
         log(sys.exc_info()[0])
