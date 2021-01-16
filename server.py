@@ -96,6 +96,7 @@ def command_conns(strscr, *args):
     for address in voice_connected_date_dict:
         insert_to_output("Address:", address)
 
+
 def command_disconnect(strscr, *args):
     '''
     Disconnects the provided user
@@ -300,9 +301,7 @@ def console(yes):
     global stdscr
     stdscr = yes
     t = threading.Thread(target=c_main, args=(stdscr,))
-    t2 = threading.Thread(target=v_main, args=())
     t.daemon = True
-    t2.daemon = True
     t.start()
 
     with open(LOG_TEXT_FILE, "w") as r:
@@ -311,8 +310,6 @@ def console(yes):
         r.write("Server Started! \n")
         insert_to_output("Server Started")
         r.write("\n")
-
-    t2.start()
 
     with open(BANNED_TEXT_FILE, "r") as r:
         banned_text = r.read()
@@ -439,35 +436,6 @@ def new_client(conn, addr):
                             log("Connection ended with: " + conn.getsockname()[0])
                             a.close()
                             remove_user(a)
-
-
-def v_main():
-    # FORMAT = pyaudio.paInt16
-    CHUNK = 1024
-    CHANNELS = 2
-    RATE = 44100
-
-    VOICE_PORT = PORT + 1
-
-    log("V main running")
-    try:
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp:
-            udp.bind((HOST, VOICE_PORT))
-
-
-            while True:
-
-                    soundData, addr = udp.recvfrom(CHUNK * CHANNELS * 10)
-
-                    if addr not in voice_connected_date_dict:
-                        voice_connected_date_dict.append(addr)
-
-                    for conn in voice_connected_date_dict:
-                        if conn != addr:
-                            udp.sendto(soundData, conn)
-
-    except:
-        log(sys.exc_info()[0])
 
 
 def c_main(yes):
